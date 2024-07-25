@@ -1,20 +1,28 @@
 # mTLS Client Certificates with Axum
 
-## Certs Setup
+## Setup
 
-1. generate server
-2. generate CA
-3. generate client
+First, some TLS setup needs to be done:
 
 ```sh
-openssl pkcs8 -nocrypt -inform PEM -outform DER -in server-key.pem -out server-key.der
-openssl pkcs12 -inkey client-key.pem -in client-cert.pem -export -out client.pfx
+cd certs/
+./generate-server.sh     # Server's self-signed TLS
+./generate-client-ca.sh  # Create signing key for client certificates
+./generate-client.sh     # Create client certificate with any username (repeatable)
+```
+
+Afterwards, you can start the server:
+
+```sh
+cargo run
 ```
 
 ## Connecting
 
-```
-curl --cert client-cert.pem --key client-key.pem -k 'https://localhost:8443/'
+For testing, `curl` can provide `--key` and `--cert` parameters, as well as `-k` to accept the self-signed certificate:
+
+```sh
+curl --key client-key.pem --cert client-cert.pem -k 'https://localhost:8443/auth'
 ```
 
-For Chrome, import `.pfx` file and restart browser. This should show popup to select cert
+In web browsers, import `certs/client-cert.pfx` file and restart the browser. This should show popup to select the certificate on visiting https://localhost:8443. Check out https://localhost:8443/auth to see if authentication was successful.

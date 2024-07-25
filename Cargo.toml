@@ -6,12 +6,10 @@ edition = "2021"
 [dependencies]
 axum = { version = "0.7", features = ["macros"] }
 axum-server = { version = "0.6", features = ["tls-rustls"] }
-futures-util = { version = "0.3", default-features = false, features = [
-    "alloc",
-] }
-rustls = { version = "0.21", features = ["dangerous_configuration"] }
-rustls-pemfile = "2.1.2"
+futures-util = "0.3"
+rustls = "0.21"
+rustls-pemfile = "2.1"
 tokio = { version = "1", features = ["full"] }
 tokio-rustls = "0.24"
-tower = { version = "0.4", features = ["util"] }
-x509-parser = "0.16.0"
+tower = "0.4"
+x509-parser = "0.16"
