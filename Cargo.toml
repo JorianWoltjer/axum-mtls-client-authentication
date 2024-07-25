@@ -1,0 +1,19 @@
+[package]
+name = "mtls-client-authentication"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7"
+axum-server = { version = "0.6", features = ["tls-rustls"] }
+futures-util = { version = "0.3", default-features = false, features = [
+    "alloc",
+] }
+rustls = { version = "0.21", features = ["dangerous_configuration"] }
+rustls-pemfile = "2.1.2"
+tokio = { version = "1", features = ["full"] }
+tokio-rustls = "0.24"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tower = { version = "0.4", features = ["util"] }
+x509-parser = "0.16.0"
