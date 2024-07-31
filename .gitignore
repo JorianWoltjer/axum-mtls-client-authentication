@@ -1,1 +1,5 @@
 /target
+*.pem
+*.pfx
+*.csr
+*.srl

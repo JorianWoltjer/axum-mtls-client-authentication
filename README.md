@@ -6,6 +6,7 @@ First, some TLS setup needs to be done:
 
 ```sh
 cd certs/
+rm *.pem *.pfx *.csr *.srl
 ./generate-server.sh     # Server's self-signed TLS
 ./generate-client-ca.sh  # Create signing key for client certificates
 ./generate-client.sh     # Create client certificate with any username (repeatable)
@@ -16,6 +17,16 @@ Afterwards, you can start the server:
 ```sh
 cargo run
 ```
+
+### Docker
+
+It seems like there is a problem with earlier openssl versions resulting in a `certificate unknown (558)` error. This can be resolved using a newer openssl version like 3.3.X. Alpine's [openssl](https://pkgs.alpinelinux.org/package/edge/main/armhf/openssl) package uses the latest version and is used in a Docker setup inside this repository. Use the following command to start it:
+
+```sh
+docker compose up --build
+```
+
+After it has started up, you should find the generated certificate files inside the mounted `certs/` directory.
 
 ## Connecting
 

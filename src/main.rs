@@ -14,7 +14,7 @@ const HOST: &str = "0.0.0.0:8443";
 async fn main() {
     // Set up TLS
     let store = load_store_from_pem("certs/ca-cert.pem").unwrap();
-    let client_cert_verifier: Arc<AllowAnyAnonymousOrAuthenticatedClient> = Arc::new(AllowAnyAnonymousOrAuthenticatedClient::new(store));
+    let client_cert_verifier = Arc::new(AllowAnyAnonymousOrAuthenticatedClient::new(store));
     let private_key = load_private_key_from_pem("certs/server-key.pem").unwrap();
     let certs = load_certificates_from_pem("certs/server-cert.pem").unwrap();
 
@@ -43,7 +43,7 @@ async fn main() {
 }
 
 async fn get_index() -> &'static str {
-    "Hello, World!"
+    "Hello, world!"
 }
 
 async fn get_auth(Extension(auth): Extension<Auth>) -> String {

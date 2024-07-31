@@ -1,0 +1,9 @@
+.dockerignore
+Dockerfile
+docker-compose.yml
+README.md
+/target
+/certs/*.pem
+/certs/*.pfx
+/certs/*.csr
+/certs/*.srl

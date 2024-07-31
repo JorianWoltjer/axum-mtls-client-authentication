@@ -14,12 +14,12 @@ pub fn load_certificates_from_pem(path: &str) -> std::io::Result<Vec<Certificate
 pub fn load_private_key_from_pem(path: &str) -> std::io::Result<rustls::PrivateKey> {
     let file = File::open(path)?;
     let mut reader = BufReader::new(file);
-    let keys = rustls_pemfile::pkcs8_private_keys(&mut reader)
+    let keys = rustls_pemfile::ec_private_keys(&mut reader)
         .map(|k| k.unwrap())
         .next()
         .unwrap();
 
-    Ok(rustls::PrivateKey(keys.secret_pkcs8_der().to_vec()))
+    Ok(rustls::PrivateKey(keys.secret_sec1_der().to_vec()))
 }
 
 pub fn load_store_from_pem(path: &str) -> std::io::Result<RootCertStore> {

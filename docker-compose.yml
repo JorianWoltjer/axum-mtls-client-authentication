@@ -1,0 +1,7 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./certs:/app/certs
