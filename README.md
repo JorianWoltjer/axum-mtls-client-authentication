@@ -12,7 +12,7 @@ rm *.pem *.pfx *.csr *.srl
 ./generate-client.sh     # Create client certificate with any username (repeatable)
 ```
 
-Afterwards, you can start the server:
+Afterward, you can start the server:
 
 ```sh
 cargo run
@@ -20,11 +20,14 @@ cargo run
 
 ### Docker
 
-It seems like there is a problem with earlier openssl versions resulting in a `certificate unknown (558)` error. This can be resolved using a newer openssl version like 3.3.X. Alpine's [openssl](https://pkgs.alpinelinux.org/package/edge/main/armhf/openssl) package uses the latest version and is used in a Docker setup inside this repository. Use the following command to start it:
+If the setup is not working locally for any reason, use the following command to start it in a tested environment:
 
 ```sh
 docker compose up --build
 ```
+
+> [!NOTE]  
+> You may also want to remove any generated certificates and let them be generated from Docker.
 
 After it has started up, you should find the generated certificate files inside the mounted `certs/` directory.
 
