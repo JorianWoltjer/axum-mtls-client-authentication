@@ -1,5 +1,7 @@
 # mTLS Client Certificates with Axum
 
+* For a setup with a reverse proxy, see the [`proxied`](https://github.com/JorianWoltjer/axum-mtls-client-authentication/tree/proxied) branch.
+
 ## Setup
 
 First, some TLS setup needs to be done:
