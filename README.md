@@ -1,4 +1,4 @@
-# mTLS Client Certificates with Axum
+# mTLS Client Certificates with Axum (proxied)
 
 ## Setup
 
@@ -18,16 +18,15 @@ Afterward, you can start the server:
 cargo run
 ```
 
+A reverse proxy should now handle TLS and send the client certificate through the `X-Client-Cert` request header. [default.conf](default.conf) contains an example for Nginx.
+
 ### Docker
 
-If the setup is not working locally for any reason, use the following command to start it in a tested environment:
+The setup described above can be replicated in a tested environment using the following command:
 
 ```sh
 docker compose up --build
 ```
-
-> [!NOTE]  
-> You may also want to remove any generated certificates and let them be generated from Docker.
 
 After it has started up, you should find the generated certificate files inside the mounted `certs/` directory.
 
@@ -36,7 +35,7 @@ After it has started up, you should find the generated certificate files inside 
 For testing, `curl` can provide `--key` and `--cert` parameters, as well as `-k` to accept the self-signed certificate:
 
 ```sh
-curl --key client-key.pem --cert client-cert.pem -k 'https://localhost:8443/auth'
+curl --key client-key.pem --cert client-cert.pem -k 'https://localhost/auth'
 ```
 
-In web browsers, import `certs/client-cert.pfx` file and restart the browser. This should show popup to select the certificate on visiting https://localhost:8443. Check out https://localhost:8443/auth to see if authentication was successful.
+In web browsers, import the `certs/client-cert.pfx` file and restart the browser. This should show popup to select the certificate on visiting https://localhost. Check out https://localhost/auth to see if authentication was successful.

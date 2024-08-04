@@ -1,89 +1,70 @@
+use std::time::SystemTime;
+
 use axum::{
-    extract::Request, middleware::AddExtension, middleware::Next, response::Response, Extension,
+    extract::{Request, State},
+    middleware::Next,
+    response::Response,
 };
-use axum_server::{accept::Accept, tls_rustls::RustlsAcceptor};
-use futures_util::future::BoxFuture;
 use rustls::Certificate;
-use std::io;
-use tokio::io::{AsyncRead, AsyncWrite};
-use tokio_rustls::server::TlsStream;
-use tower::Layer;
+use rustls_pemfile::Item;
+use urlencoding::decode;
 use x509_parser::prelude::{FromDer, X509Certificate};
+
+use crate::AppState;
 
 #[derive(Debug, Clone)]
 pub struct Auth {
     pub username: String,
 }
 
-#[derive(Debug, Clone)]
-pub struct TlsData {
-    peer_certificates: Option<Vec<Certificate>>,
-}
-
-#[derive(Debug, Clone)]
-pub struct TLSAcceptor {
-    inner: RustlsAcceptor,
-}
-impl TLSAcceptor {
-    pub fn new(inner: RustlsAcceptor) -> Self {
-        Self { inner }
-    }
-}
-impl<I, S> Accept<I, S> for TLSAcceptor
-where
-    I: AsyncRead + AsyncWrite + Unpin + Send + 'static,
-    S: Send + 'static,
-{
-    type Stream = TlsStream<I>;
-    type Service = AddExtension<S, TlsData>;
-    type Future = BoxFuture<'static, io::Result<(Self::Stream, Self::Service)>>;
-
-    fn accept(&self, stream: I, service: S) -> Self::Future {
-        let acceptor = self.inner.clone();
-
-        Box::pin(async move {
-            let (stream, service) = acceptor.accept(stream, service).await?;
-            let server_conn = stream.get_ref().1;
-            let tls_data = TlsData {
-                peer_certificates: server_conn.peer_certificates().map(From::from),
-            };
-            let service = Extension(tls_data).layer(service);
-
-            Ok((stream, service))
-        })
-    }
-}
-
 pub async fn auth_middleware(
-    Extension(tls_data): Extension<TlsData>,
+    State(state): State<AppState>,
     mut request: Request,
     next: Next,
 ) -> Result<Response, &'static str> {
-    if let Some(peer_certificates) = tls_data.peer_certificates {
-        // Take first client certificate
-        let cert = X509Certificate::from_der(
-            &peer_certificates
-                .first()
-                .ok_or("missing client certificate")?
-                .0,
-        )
-        .map_err(|_| "invalid client certificate")?
-        .1;
-        // Take first common name from certificate
-        let cn = cert
-            .subject()
-            .iter_common_name()
-            .next()
-            .ok_or("missing common name in client certificate")?
-            .as_str()
-            .map_err(|_| "invalid common name in client certificate")?;
+    // Client certificate is passed in the header by proxy
+    let header_cert = request
+        .headers()
+        .get("X-Client-Cert")
+        .map(|v| decode(v.to_str().unwrap()).unwrap());
 
-        // Pass authentication to routes
-        request.extensions_mut().insert(Auth {
-            username: cn.to_string(),
-        });
+    if let Some(s) = header_cert {
+        let item = rustls_pemfile::read_one_from_slice(s.as_bytes())
+            .map(|c| c.unwrap().0)
+            .map_err(|_| "invalid client certificate format")?;
+
+        match item {
+            Item::X509Certificate(cert) => {
+                // We verify it again (also in proxy) here to ensure the client certificate is valid
+                let cert = Certificate(cert.to_vec());
+                let result = state
+                    .verifier
+                    .verify_client_cert(&cert, &[], SystemTime::now());
+                if result.is_err() {
+                    return Err("invalid client certificate signature");
+                }
+
+                let cert = X509Certificate::from_der(&cert.0)
+                    .map_err(|_| "invalid client certificate format")?
+                    .1;
+                // Extract first common name
+                let cn = cert
+                    .subject()
+                    .iter_common_name()
+                    .next()
+                    .ok_or("missing common name in client certificate")?
+                    .as_str()
+                    .map_err(|_| "invalid common name in client certificate")?;
+
+                // Pass it to the next handler
+                request.extensions_mut().insert(Auth {
+                    username: cn.to_string(),
+                });
+            }
+            _ => return Err("invalid client certificate type"),
+        }
     } else {
-        return Err("missing client certificate");
+        return Err("missing client certificate header");
     }
 
     Ok(next.run(request).await)

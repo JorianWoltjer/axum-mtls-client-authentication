@@ -1,42 +1,38 @@
-use axum::{middleware, routing::get, Extension, Router};
-use axum_server::tls_rustls::{RustlsAcceptor, RustlsConfig};
-use mtls_client_authentication::auth::{auth_middleware, Auth};
-use rustls::{server::AllowAnyAnonymousOrAuthenticatedClient, ServerConfig};
 use std::sync::Arc;
 
+use axum::{middleware, routing::get, Extension, Router};
 use mtls_client_authentication::{
-    auth::TLSAcceptor, load_certificates_from_pem, load_private_key_from_pem, load_store_from_pem,
+    auth::{auth_middleware, Auth},
+    load_store_from_pem, AppState,
 };
+use rustls::server::AllowAnyAuthenticatedClient;
 
-const HOST: &str = "0.0.0.0:8443";
+const HOST: &str = "0.0.0.0:8000";
 
 #[tokio::main]
 async fn main() {
-    // Set up TLS
     let store = load_store_from_pem("certs/ca-cert.pem").unwrap();
-    let client_cert_verifier = Arc::new(AllowAnyAnonymousOrAuthenticatedClient::new(store));
-    let private_key = load_private_key_from_pem("certs/server-key.pem").unwrap();
-    let certs = load_certificates_from_pem("certs/server-cert.pem").unwrap();
-
-    let config = RustlsConfig::from_config(Arc::new(
-        ServerConfig::builder()
-            .with_safe_defaults()
-            .with_client_cert_verifier(client_cert_verifier)
-            .with_single_cert(certs, private_key)
-            .unwrap(),
-    ));
+    let client_cert_verifier = AllowAnyAuthenticatedClient::new(store);
+    let state = AppState {
+        verifier: Arc::new(client_cert_verifier),
+    };
 
     // Routes
-    let app = Router::new().route("/", get(get_index)).merge(
-        Router::new() // Authenticated routes
-            .route("/auth", get(get_auth))
-            .route_layer(middleware::from_fn(auth_middleware)),
-    );
+    let app = Router::new()
+        .route("/", get(get_index))
+        .merge(
+            Router::new() // Authenticated routes
+                .route("/auth", get(get_auth))
+                .route_layer(middleware::from_fn_with_state(
+                    state.clone(),
+                    auth_middleware,
+                )),
+        )
+        .with_state(state);
 
     // Start server
     println!("Listening on {}...", HOST);
     axum_server::bind(HOST.parse().unwrap())
-        .acceptor(TLSAcceptor::new(RustlsAcceptor::new(config)))
         .serve(app.into_make_service())
         .await
         .unwrap();
