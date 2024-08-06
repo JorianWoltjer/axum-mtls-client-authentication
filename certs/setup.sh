@@ -4,7 +4,7 @@ cd "$(dirname "$0")"  # Change to the directory of the script
 # === Perform the initial SSL setup ===
 
 # Check if already setup and prompt to continue
-if [ -f frontend/ca-cert.pem ] || [ -f backend/ca-cert.pem ]; then
+if [ -f frontend/ca-cert.pem ] && [ -f backend/ca-cert.pem ]; then
   read -p "Certificates already exist. Do you want to continue and overwrite them? [y/N] "
   if [[ ! $REPLY =~ ^[Yy] ]]; then
     exit 1

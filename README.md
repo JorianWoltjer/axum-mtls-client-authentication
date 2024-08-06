@@ -33,6 +33,7 @@ After it has started up, you should find the generated certificate files inside 
 For testing, `curl` can provide `--key` and `--cert` parameters, as well as `-k` to accept the self-signed certificate:
 
 ```sh
+cd certs/frontend/
 curl --key client-key_client1.pem --cert client-cert_client1.pem -k 'https://localhost/auth'
 ```
 
