@@ -1,0 +1,4 @@
+basicConstraints = CA:FALSE
+keyUsage = digitalSignature
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer

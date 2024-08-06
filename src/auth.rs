@@ -1,27 +1,19 @@
-use std::time::SystemTime;
-
-use axum::{
-    extract::{Request, State},
-    middleware::Next,
-    response::Response,
-};
+use axum::{extract::Request, middleware::Next, response::Response};
 use rustls::Certificate;
 use rustls_pemfile::Item;
 use urlencoding::decode;
-use x509_parser::prelude::{FromDer, X509Certificate};
-
-use crate::AppState;
+use x509_parser::{
+    num_bigint::BigUint,
+    prelude::{FromDer, X509Certificate},
+};
 
 #[derive(Debug, Clone)]
 pub struct Auth {
     pub username: String,
+    pub serial: BigUint,
 }
 
-pub async fn auth_middleware(
-    State(state): State<AppState>,
-    mut request: Request,
-    next: Next,
-) -> Result<Response, &'static str> {
+pub async fn auth_middleware(mut request: Request, next: Next) -> Result<Response, String> {
     // Client certificate is passed in the header by proxy
     let header_cert = request
         .headers()
@@ -35,14 +27,8 @@ pub async fn auth_middleware(
 
         match item {
             Item::X509Certificate(cert) => {
-                // We verify it again (also in proxy) here to ensure the client certificate is valid
                 let cert = Certificate(cert.to_vec());
-                let result = state
-                    .verifier
-                    .verify_client_cert(&cert, &[], SystemTime::now());
-                if result.is_err() {
-                    return Err("invalid client certificate signature");
-                }
+                // No need to verify certificate, it's already done by the proxy
 
                 let cert = X509Certificate::from_der(&cert.0)
                     .map_err(|_| "invalid client certificate format")?
@@ -59,12 +45,13 @@ pub async fn auth_middleware(
                 // Pass it to the next handler
                 request.extensions_mut().insert(Auth {
                     username: cn.to_string(),
+                    serial: cert.serial.clone(),
                 });
             }
-            _ => return Err("invalid client certificate type"),
+            _ => return Err("invalid client certificate type".to_string()),
         }
     } else {
-        return Err("missing client certificate header");
+        return Err("missing client certificate header".to_string());
     }
 
     Ok(next.run(request).await)

@@ -1,0 +1,38 @@
+[ ca ]
+default_ca = CA_default
+
+[ CA_default ]
+dir               = .                     # Where everything is kept
+database          = $dir/.index           # database index file.
+serial            = $dir/.serial          # The current serial number
+RANDFILE          = $dir/.rand            # Private random number file
+private_key       = $dir/ca-key.pem       # The private key
+certificate       = $dir/ca-cert.pem      # The CA certificate
+crlnumber         = $dir/.crlnumber       # the current crl number
+crl               = $dir/ca-crl.pem       # The current CRL
+crl_extensions    = crl_ext               # CRL extensions
+default_crl_days  = 30                    # how long before next CRL
+default_md        = sha256                # which md to use.
+name_opt          = ca_default            # Subject name options
+cert_opt          = ca_default            # Certificate field options
+default_days      = 365                   # how long to certify for
+preserve          = no                    # keep passed DN ordering
+
+policy            = policy_strict
+
+[ policy_strict ]
+countryName             = optional
+stateOrProvinceName     = optional
+organizationName        = optional
+organizationalUnitName  = optional
+commonName              = supplied
+emailAddress            = optional
+
+[ crl_ext ]
+authorityKeyIdentifier=keyid:always
+
+[ usr_cert ]
+basicConstraints = CA:FALSE
+keyUsage = digitalSignature
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer

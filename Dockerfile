@@ -4,13 +4,18 @@ RUN apk add --no-cache bash openssl cargo
 RUN adduser -D user
 
 WORKDIR /app
-COPY . .
+
+COPY src /app/src
+COPY Cargo.* /app
 RUN chown -R user:user /app
-RUN chmod +x /app/certs/*.sh /app/entrypoint.sh
-USER user
 RUN cargo build --release
 
+COPY certs /app/certs
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /app/certs/*.sh /entrypoint.sh
+
+USER user
 EXPOSE 8443
 
-ENTRYPOINT [ "/app/entrypoint.sh" ]
+ENTRYPOINT [ "/entrypoint.sh" ]
 CMD ["./target/release/mtls-client-authentication"]

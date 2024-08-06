@@ -1,5 +1,8 @@
 /target
-*.pem
-*.pfx
-*.csr
-*.srl
+/certs/**/*.pem
+/certs/**/*.pfx
+/certs/**/*.csr
+/certs/**/*.srl
+/certs/**/.index*
+/certs/**/.serial*
+/certs/**/.crlnumber*

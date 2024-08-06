@@ -1,10 +1,7 @@
-.dockerignore
-Dockerfile
-docker-compose.yml
-default.conf
-README.md
-/target
-/certs/*.pem
-/certs/*.pfx
-/certs/*.csr
-/certs/*.srl
+/certs/**/*.pem
+/certs/**/*.pfx
+/certs/**/*.csr
+/certs/**/*.srl
+/certs/**/.index*
+/certs/**/.serial*
+/certs/**/.crlnumber*
